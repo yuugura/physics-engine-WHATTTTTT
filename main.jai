@@ -1,8 +1,8 @@
 #import "raylib";
 #import "Basic";
+#import "Random";
 
-#load "shapes.jai";
-#load "math_helper.jai";
+#load "physics.jai";
 
 SCREEN_WIDTH  :: 1024;
 SCREEN_HEIGHT :: 768;
@@ -20,28 +20,38 @@ main :: () {
     camera.rotation = 0.0;
     camera.zoom = -1.0;
 
-    rectangle := make_rect(.{SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 0}, .{100, 100, 0});
+    world: Simulated_World;
+    rectangle := add_body(*world, .{SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 0}, .{}, .{100, 100, 0}, 50);
+    rectangle.color = BLACK;
     
-    floor := make_rect(.{SCREEN_WIDTH/2, 0, 0}, .{SCREEN_WIDTH, 100, 0});
+    floor := add_body(*world, .{SCREEN_WIDTH/2, 0, 0}, .{}, .{SCREEN_WIDTH, 50, 0}, 0);
+    floor.color = GRAY;
+    floor.friction = 0.9;
 
-    floor_aabb := get_aabb(floor);
+    wall1 := add_body(*world, .{0, SCREEN_HEIGHT/2, 0}, .{}, .{50, SCREEN_HEIGHT, 0}, 0);
+    wall2 := add_body(*world, .{SCREEN_WIDTH, SCREEN_HEIGHT/2, 0}, .{}, .{50, SCREEN_HEIGHT, 0}, 0);
 
     SetTargetFPS(120);
 
     while !WindowShouldClose() {
-
-        delta_position := rectangle.center;
-
-        velocity += acceleration * GetFrameTime();
-        delta_position.y -= velocity * GetFrameTime();
-
-        box_aabb := get_aabb(rectangle);
-        if (aabb_overlap(a=box_aabb, b=floor_aabb)) {
-            delta_position.y += velocity * GetFrameTime();
-        }
         
-        update_shape_model(*rectangle, delta_position, rectangle.scale);
-        update_shape_vertices(*rectangle);
+        if IsMouseButtonPressed(.MOUSE_BUTTON_LEFT)
+        {
+            p := GetMousePosition();
+            p.x = (SCREEN_WIDTH - p.x);
+            p.y = (SCREEN_HEIGHT - p.y);
+            //p.x = -p.x;
+            print("p: %\n", p);
+            s := Vector3.{random_get_within_range(20, 50), random_get_within_range(20, 50), 0};
+            body := add_body(*world, .{p.x, p.y, 0}, .{}, s, s.x + s.y);
+            r := random_get_zero_to_one_open() * 255;
+            g := random_get_zero_to_one_open() * 255;
+            b := random_get_zero_to_one_open() * 255;
+            body.color = Color.{xx r, xx g, xx b, 255};
+            body.friction = 0.8;
+        }
+
+        simulate_world(*world);
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -52,8 +62,12 @@ main :: () {
 
         BeginMode2D(camera);
 
-        draw_convex_shape(shape=rectangle, color=BLACK);
-        draw_convex_shape(shape=floor, color=GRAY);
+        for world.bodies 
+        {
+            draw_convex_shape(it.shapes[0], color=it.color);
+        }
+        //draw_convex_shape(shape=rectangle.shapes[0], color=BLACK);
+        //draw_convex_shape(shape=floor.shapes[0], color=GRAY);
         
         EndMode2D();
         EndDrawing();

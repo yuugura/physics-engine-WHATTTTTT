@@ -70,6 +70,24 @@ get_furthest_vertex :: (using shape: Convex_Shape) -> Vector3
     return global_vertices[index];
 }
 
+get_furthest_point_index_in_direction :: (using shape: Convex_Shape, dir: Vector3) -> int
+{
+    max: float = -FLOAT32_MAX;
+    index: int = 0;
+
+    for global_vertices
+    {
+        projection := dot(it, dir);
+        if projection > max
+        {
+            max = projection;
+            index = it_index;
+        }
+    }
+
+    return index;
+}
+
 get_shape_radius :: (using shape: Convex_Shape) -> float
 {
     return length(get_furthest_vertex(shape) - center);
@@ -92,6 +110,20 @@ update_shape_model :: (using shape: *Convex_Shape, new_position: Vector3, new_sc
     center = new_position;
     scale = new_scale;
     model = make_model_matrix(new_position, new_scale, axis, angle);
+}
+
+update_shape_model :: (using shape: *Convex_Shape, new_position: Vector3, new_scale: Vector3, q: Quaternion)
+{
+    center = new_position;
+    scale = new_scale;
+    model = make_model_matrix(new_position, new_scale, q);
+}
+
+update_shape :: (using shape: *Convex_Shape, body_position: Vector3, q: Quaternion)
+{
+    world_center := body_position + rotate(q, local_offset);
+    update_shape_model(shape, world_center, scale, q);
+    update_shape_vertices(shape);
 }
 
 draw_convex_shape :: (shape: Convex_Shape, offset: Vector3 = .{}, color: Color = WHITE) {
