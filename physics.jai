@@ -166,6 +166,14 @@ add_body :: (using world: *Simulated_World, p: Vector3, v: Vector3, s: Vector3, 
     return *bodies[bodies.count-1];
 }
 
+/* Auto: btw when rotating objects in 2D you rotate in z-axis, why? see here: https://puu.sh/KRu8C/c0557a9f48.png
+*/
+rotate_body :: (body: *Rigid_Body, axis: Vector3, angle: float)
+{
+    set_from_axis_and_angle(*body.orientation, axis.x, axis.y, axis.z, angle);
+    update_body_shapes(body);
+}
+
 simulate_world :: (using world: *Simulated_World)
 {
     array_reset(*collision_resolutions);
