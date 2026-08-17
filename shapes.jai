@@ -25,6 +25,12 @@ Convex_Shape :: struct {
     type: Polygon_Type;
 };
 
+Rect_Piece :: struct
+{
+    scale: Vector3;   // world size of the rectangle piece
+    center: Vector3;  // piece center in body-local space
+}
+
 make_rect :: (position: Vector3 = .{}, scale: Vector3 = .{}) -> Convex_Shape
 {
     rect: Convex_Shape;
@@ -126,6 +132,7 @@ update_shape :: (using shape: *Convex_Shape, body_position: Vector3, q: Quaterni
     update_shape_vertices(shape);
 }
 
+/* Auto: This shouldn't be part of the physics engine but it's here for debugging purpose
 draw_convex_shape :: (shape: Convex_Shape, offset: Vector3 = .{}, color: Color = WHITE) {
     for 0..(shape.global_vertices.count - 3) {
         DrawTriangle(v1=Vector2.{ offset.x + shape.global_vertices[0].x,      (offset.y + shape.global_vertices[0].y) },
@@ -134,7 +141,7 @@ draw_convex_shape :: (shape: Convex_Shape, offset: Vector3 = .{}, color: Color =
                      color);
     }
 };
-
+*/
 AABB :: struct {
     min: Vector3;
     max: Vector3;

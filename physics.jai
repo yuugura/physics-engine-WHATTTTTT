@@ -1,9 +1,3 @@
-#import "raylib";
-
-#load "math_helper.jai";
-#load "shapes.jai";
-#load "collision.jai";
-
 /* Auto: A physics Engine is basically divided into these steps:
     
     1. Rigid body and integrater 
@@ -99,6 +93,64 @@ make_rigid_body :: (p: Vector3, v: Vector3, s: Vector3, mass: float, body_type: 
         inertia_tensor._22 = one_twelve * mass * x_x;
         inertia_tensor._33 = one_twelve * mass * (x_x + y_y);
 
+        success, i := inverse(inertia_tensor);
+        body.inverse_inertia = ifx success then i else Matrix3_Identity;
+    }
+
+    return body;
+}
+
+make_compound_rect_body :: (pieces: [..] Rect_Piece, mass: float) -> Rigid_Body
+{
+    total_area := 0.0;
+    for p : pieces total_area += p.scale.x * p.scale.y;
+
+    // combined center of mass (same frame as the piece centers)
+    com := Vector3.{};
+    for p : pieces com += p.center * (p.scale.x * p.scale.y);
+    if total_area > 0 com = com / total_area;
+
+    body: Rigid_Body;
+    body.position = .{};
+    body.velocity = .{};
+    body.orientation = Quaternion.{0, 0, 0, 1};
+    body.inverse_mass = ifx mass > 0 then 1.0/mass else 0;
+
+    for p : pieces
+    {
+        shape := make_rect(.{}, p.scale);
+        shape.local_offset = p.center - com;
+        array_add(*body.shapes, shape);
+    }
+
+    // combined moments of inertia about the COM (parallel axis theorem). All three axes are filled so the inertia matrix stays invertible.
+    i_xx := 0.0;
+    i_yy := 0.0;
+    i_zz := 0.0;
+
+    one_twelve := 1.0 / 12.0;
+
+    for p : pieces
+    {
+        a := p.scale.x * p.scale.y;
+        m := ifx total_area > 0 then mass * a / total_area else 0;
+        offset := p.center - com;
+        ox_ox := offset.x * offset.x;
+        oy_oy := offset.y * offset.y;
+        sx_sx := p.scale.x * p.scale.x;
+        sy_sy := p.scale.y * p.scale.y;
+
+        i_xx += m * (sy_sy * one_twelve + oy_oy);
+        i_yy += m * (sx_sx * one_twelve + ox_ox);
+        i_zz += m * ((sx_sx + sy_sy) * one_twelve + ox_ox + oy_oy);
+    }
+
+    if mass > 0
+    {
+        inertia_tensor: Matrix3;
+        inertia_tensor._11 = i_xx;
+        inertia_tensor._22 = i_yy;
+        inertia_tensor._33 = i_zz;
         success, i := inverse(inertia_tensor);
         body.inverse_inertia = ifx success then i else Matrix3_Identity;
     }
