@@ -158,12 +158,12 @@ make_compound_rect_body :: (pieces: [..] Rect_Piece, mass: float) -> Rigid_Body
     return body;
 }
 
-add_body :: (using world: *Simulated_World, p: Vector3, v: Vector3, s: Vector3, mass: float = 10) -> *Rigid_Body
+add_body :: (using world: *Simulated_World, p: Vector3, v: Vector3, s: Vector3, mass: float = 10) -> int 
 {
     body := make_rigid_body(p, v, s, mass);
     array_add(*bodies, body);
 
-    return *bodies[bodies.count-1];
+    return bodies.count-1;
 }
 
 /* Auto: btw when rotating objects in 2D you rotate in z-axis, why? see here: https://puu.sh/KRu8C/c0557a9f48.png

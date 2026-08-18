@@ -36,9 +36,20 @@ radians :: (theta: float) -> float
 	return (theta * (PI/180.0));
 }
 
+degrees :: (theta: float) -> float
+{
+    return theta * (180.0 / PI);
+}
+
 cross :: (a: Vector2, k: float) -> Vector2
 {
     return .{-1 * a.y * k, a.x * k};
+}
+
+quat_to_z_angle :: (q: Quaternion) -> float
+{
+    // q = {0, 0, sin(θ/2), cos(θ/2)} for a Z rotation  →  θ = 2·atan2(z, w)
+    return degrees(2.0 * atan2(q.z, q.w));
 }
 
 make_rotation_matrix :: (axis: Vector3, angle: float) -> Matrix4 
