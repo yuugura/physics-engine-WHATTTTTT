@@ -315,7 +315,7 @@ integrate_for_velocity :: (body: *Rigid_Body, dt: float)
     }
 
     // Auto: If it's not a static body proceed to calculate the angular momentum.
-    if !body.freeze_orientation
+    if !body.freeze_orientation && body.inverse_mass > 0
     {
         body.angular_velocity += body.inverse_inertia * body.torque * dt;
         body.angular_velocity = body.angular_velocity * pow(physics_damping_factor, physics_dt);
@@ -440,8 +440,9 @@ resolve_contact :: (using resolution: *Resolution, c: *Contact)
         {
             tangent = tangent / tangent_length;
 
-            d: float = dot(tangent, cross(body_a.inverse_inertia * cross(r1, tangent), r1) +
-                           cross(body_b.inverse_inertia * cross(r2, tangent), r2));
+            d_a: Vector3 = ifx body_a.inverse_mass == 0 then .{} else cross(body_a.inverse_inertia * cross(r1, tangent), r1);
+            d_b: Vector3 = ifx body_b.inverse_mass == 0 then .{} else cross(body_b.inverse_inertia * cross(r2, tangent), r2);
+            d: float = dot(tangent, d_a + d_b);
 
             friction_mass: float = body_a.inverse_mass + body_b.inverse_mass + d;
 
@@ -458,8 +459,10 @@ resolve_contact :: (using resolution: *Resolution, c: *Contact)
                 body_a.velocity -= tangent * (jt * body_a.inverse_mass);
                 body_b.velocity += tangent * (jt * body_b.inverse_mass);
 
-                body_a.angular_velocity -= body_a.inverse_inertia * cross(r1, tangent * jt);
-                body_b.angular_velocity += body_b.inverse_inertia * cross(r2, tangent * jt);
+                if body_a.inverse_mass != 0
+                    body_a.angular_velocity -= body_a.inverse_inertia * cross(r1, tangent * jt);
+                if body_b.inverse_mass != 0
+                    body_b.angular_velocity += body_b.inverse_inertia * cross(r2, tangent * jt);
             }
         }
     }
